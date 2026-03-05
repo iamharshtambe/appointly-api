@@ -13,12 +13,74 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         Role          @default(USER)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  services     Service[]
+  appointments Appointment[]
 
   @@map("users")
+}
+
+enum ServiceType {
+  MEDICAL
+  HOUSE_HELP
+  BEAUTY
+  FITNESS
+  EDUCATION
+  OTHER
+}
+
+model Service {
+  id              String         @id @default(uuid())
+  name            String
+  type            ServiceType
+  durationMinutes Int            @map("duration_minutes")
+  providerId      String         @map("provider_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  provider        User           @relation(fields: [providerId], references: [id])
+  availabilities  Availability[]
+  appointments    Appointment[]
+
+  @@index([providerId])
+  @@index([type])
+  @@map("services")
+}
+
+model Availability {
+  id        String  @id @default(uuid())
+  serviceId String  @map("service_id")
+  dayOfWeek Int     @map("day_of_week")
+  startTime String  @map("start_time")
+  endTime   String  @map("end_time")
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, dayOfWeek])
+  @@map("availabilities")
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CANCELLED
+}
+
+model Appointment {
+  id        String            @id @default(uuid())
+  userId    String            @map("user_id")
+  serviceId String            @map("service_id")
+  date      DateTime          @db.Date
+  startTime String            @map("start_time")
+  endTime   String            @map("end_time")
+  slotId    String            @unique @map("slot_id")
+  status    AppointmentStatus @default(BOOKED)
+  createdAt DateTime          @default(now()) @map("created_at")
+  user      User              @relation(fields: [userId], references: [id])
+  service   Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@index([serviceId, date, status])
+  @@index([userId])
+  @@map("appointments")
 }
