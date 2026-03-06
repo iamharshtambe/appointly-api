@@ -21,13 +21,3 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 }
-
-export function authorize(...roles: Role[]) {
-  return function (req: Request, res: Response, next: NextFunction) {
-    if (!req.user || !roles.includes(req.user?.role)) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    next();
-  };
-}
