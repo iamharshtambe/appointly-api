@@ -1,14 +1,10 @@
-import { Role } from '../generated/prisma/enums';
+import type { Role } from '../generated/prisma/enums';
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
 export type JwtPayload = { userId: string; role: Role };
 
-export function authMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -24,4 +20,14 @@ export function authMiddleware(
   } catch (err) {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
+}
+
+export function authorize(...roles: Role[]) {
+  return function (req: Request, res: Response, next: NextFunction) {
+    if (!req.user || !roles.includes(req.user?.role)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    next();
+  };
 }
